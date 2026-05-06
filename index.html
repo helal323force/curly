@@ -1,126 +1,31 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-  <title>BMC - Bangladesh Minecraft Community :: Server Rankings</title>
-  <!-- TailwindCSS + Font Awesome + Google Fonts -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
+  <title>BMC SERVER RANKING PORTAL</title>
   <link rel="stylesheet" href="style.css">
 </head>
-<body class="bg-gray-950 text-gray-200 font-[Inter]">
 
-  <!-- Navigation / Header -->
-  <nav class="container mx-auto px-4 md:px-6 py-4 flex flex-col md:flex-row justify-between items-center border-b border-amber-500/30">
-    <div class="flex items-center gap-3 mb-3 md:mb-0">
-      <img src="https://files.catbox.moe/4lrwsy.jpeg" alt="BMC Logo" class="w-10 h-10 rounded-full object-cover border border-amber-500 shadow-md">
-      <div>
-        <h1 class="text-2xl font-bold tracking-tight bg-gradient-to-r from-amber-400 to-yellow-600 bg-clip-text text-transparent">BMC</h1>
-        <p class="text-xs text-gray-400">Bangladesh Minecraft Community</p>
-      </div>
-    </div>
-    <div class="flex flex-wrap justify-center gap-4 text-sm font-medium">
-      <a href="#" class="nav-link active" data-section="home">🏠 Home</a>
-      <a href="#" class="nav-link" data-section="leaderboard">📊 Leaderboard</a>
-      <a href="#" class="nav-link" data-section="add-server">➕ Add Server</a>
-      <a href="#" id="adminHeaderBtn" class="nav-link text-amber-400 hover:text-amber-300 transition">🔒 Admin</a>
-    </div>
-  </nav>
+<body>
 
-  <main class="container mx-auto px-4 md:px-6 py-8">
-    <!-- ================= DYNAMIC SECTIONS ================= -->
-    
-    <!-- Home Section (Server List) -->
-    <div id="homeSection">
-      <!-- Hero -->
-      <div class="text-center mb-10">
-        <h2 class="text-3xl md:text-4xl font-extrabold mb-3">Find the <span class="text-amber-400">Best Minecraft Servers</span> in Bangladesh</h2>
-        <p class="text-gray-400 max-w-2xl mx-auto">Discover · Vote · Compete · Grow the Community</p>
-        <div class="mt-4 flex flex-wrap justify-center gap-3">
-          <input type="text" id="searchInput" placeholder="Search by name, IP or gamemode..." class="bg-gray-800 border border-gray-700 rounded-full px-5 py-2 w-64 md:w-80 focus:outline-none focus:border-amber-500 text-sm">
-          <button id="searchBtn" class="bg-amber-600 hover:bg-amber-500 text-white px-6 py-2 rounded-full transition flex items-center gap-2"><i class="fas fa-search"></i> Search</button>
-        </div>
-      </div>
-
-      <!-- Filters -->
-      <div class="flex flex-wrap justify-between items-center gap-4 mb-6">
-        <div class="flex flex-wrap gap-2">
-          <button class="filter-chip active" data-cat="all">All</button>
-          <button class="filter-chip" data-cat="Survival">Survival</button>
-          <button class="filter-chip" data-cat="PvP">PvP</button>
-          <button class="filter-chip" data-cat="Factions">Factions</button>
-          <button class="filter-chip" data-cat="Lifesteal">Lifesteal</button>
-          <button class="filter-chip" data-cat="Bedrock">Bedrock</button>
-        </div>
-        <div class="text-sm text-gray-400 bg-gray-800/50 px-3 py-1 rounded-full">
-          <i class="fas fa-chart-line mr-1"></i> <span id="totalServersCount">0</span> servers • <span id="totalVotesCount">0</span> votes
-        </div>
-      </div>
-
-      <!-- Server Grid -->
-      <div id="serverGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5"></div>
-      <div id="noResultsMsg" class="text-center py-12 text-gray-500 hidden">No servers found. <button id="resetSearchBtn" class="text-amber-400 underline">Reset filters</button></div>
-    </div>
-
-    <!-- Leaderboard Section (Hidden initially) -->
-    <div id="leaderboardSection" class="hidden">
-      <div class="flex justify-between items-center mb-6 border-b border-gray-800 pb-3">
-        <h2 class="text-2xl font-bold"><i class="fas fa-trophy text-amber-500 mr-2"></i>Top Voted Servers</h2>
-        <button id="clearLeaderboardBtn" class="admin-only hidden text-xs bg-red-900/30 hover:bg-red-800/40 text-red-300 px-3 py-1 rounded transition"><i class="fas fa-trash-alt mr-1"></i>Reset All Votes</button>
-      </div>
-      <div id="leaderboardList" class="space-y-3"></div>
-    </div>
-
-    <!-- Add Server Section (Hidden initially) -->
-    <div id="addServerSection" class="hidden max-w-2xl mx-auto">
-      <div class="bg-gray-900/60 backdrop-blur-sm rounded-2xl p-6 border border-gray-800 shadow-xl">
-        <h2 class="text-2xl font-bold mb-2"><i class="fas fa-plus-circle text-amber-400 mr-2"></i>Submit Your Server</h2>
-        <p class="text-gray-400 text-sm mb-5">Fill the details below. Admin will review & approve.</p>
-        <div class="space-y-4">
-          <input type="text" id="addName" placeholder="Server Name *" class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 focus:outline-none focus:border-amber-500">
-          <input type="text" id="addIp" placeholder="IP Address (e.g., play.server.com:25565) *" class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 focus:outline-none focus:border-amber-500">
-          <select id="addCategory" class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 focus:outline-none focus:border-amber-500">
-            <option value="Survival">Survival</option><option value="PvP">PvP</option><option value="Factions">Factions</option>
-            <option value="Lifesteal">Lifesteal</option><option value="Bedrock">Bedrock</option><option value="Skyblock">Skyblock</option>
-          </select>
-          <input type="text" id="addLogo" placeholder="Logo URL (optional)" class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 focus:outline-none focus:border-amber-500">
-          <textarea id="addDesc" rows="2" placeholder="Short description" class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 focus:outline-none focus:border-amber-500"></textarea>
-          <button id="submitServerBtn" class="w-full bg-amber-600 hover:bg-amber-500 text-white font-semibold py-3 rounded-xl transition flex items-center justify-center gap-2"><i class="fas fa-paper-plane"></i> Submit for Review</button>
-        </div>
-      </div>
-    </div>
-  </main>
-
-  <footer class="text-center py-6 border-t border-gray-800 text-gray-500 text-sm mt-10">
-    <p>© 2025 BMC — Bangladesh Minecraft Community. Real-time data from mcsrvstat.us</p>
-    <p class="text-xs mt-1">Made with <i class="fas fa-heart text-red-500"></i> for Minecraft Bangladesh</p>
-  </footer>
-
-  <!-- Admin Modal (Hidden by default) -->
-  <div id="adminModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 hidden transition-all">
-    <div class="bg-gray-900 rounded-2xl w-full max-w-md p-6 border border-amber-500/30 shadow-2xl">
-      <div class="flex justify-between items-center mb-4"><h3 class="text-xl font-bold"><i class="fas fa-lock mr-2 text-amber-400"></i>Admin Access</h3><button id="closeAdminModal" class="text-gray-400 hover:text-white text-2xl">&times;</button></div>
-      <p class="text-gray-300 text-sm mb-4">Enter security code to unlock admin panel</p>
-      <input type="password" id="adminCodeInput" placeholder="****" class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 focus:outline-none focus:border-amber-500 mb-4">
-      <button id="unlockAdminBtn" class="w-full bg-amber-600 hover:bg-amber-500 text-white font-semibold py-2 rounded-xl transition">Unlock Panel</button>
-      <p id="adminErrorMsg" class="text-red-400 text-xs mt-3 hidden">Incorrect code! Try 3233</p>
-    </div>
+<header class="topbar">
+  <div class="logo-box">
+    <img src="logo.png" class="logo">
+    <h1>BMC SERVER RANKING PORTAL</h1>
   </div>
+  <button id="menuBtn">☰</button>
+</header>
 
-  <!-- Admin Dashboard Modal -->
-  <div id="adminDashboard" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 hidden">
-    <div class="bg-gray-900 rounded-2xl w-full max-w-3xl max-h-[85vh] overflow-y-auto p-6 border border-amber-500/40 shadow-2xl">
-      <div class="flex justify-between items-center mb-4"><h3 class="text-xl font-bold"><i class="fas fa-crown text-amber-400 mr-2"></i>Admin Dashboard</h3><button id="closeDashboardBtn" class="text-gray-400 hover:text-white text-2xl">&times;</button></div>
-      <div class="space-y-6">
-        <div><h4 class="font-semibold text-amber-400 mb-2"><i class="fas fa-clock mr-1"></i> Pending Servers</h4><div id="pendingList" class="bg-gray-800/50 rounded-xl p-3 text-sm">Loading...</div></div>
-        <div><h4 class="font-semibold text-amber-400 mb-2"><i class="fas fa-database mr-1"></i> Manage Servers</h4><div id="manageServerList" class="bg-gray-800/50 rounded-xl p-3 text-sm max-h-64 overflow-y-auto"></div><button id="exportDataBtn" class="mt-3 bg-green-700 hover:bg-green-600 text-white text-sm px-4 py-2 rounded-xl transition w-full"><i class="fas fa-download mr-1"></i> Export All Data (JSON)</button></div>
-        <div><h4 class="font-semibold text-amber-400 mb-2"><i class="fas fa-palette mr-1"></i> Customize UI</h4><div class="flex gap-3 items-center"><input type="color" id="themeColorPicker" value="#f59e0b" class="w-12 h-12 rounded border border-gray-600"><button id="applyThemeBtn" class="bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded-xl text-sm">Apply Primary Color</button><button id="resetVotesBtn" class="admin-reset-votes bg-red-900/50 hover:bg-red-800/50 text-red-300 px-4 py-2 rounded-xl text-sm"><i class="fas fa-chart-simple mr-1"></i> Reset All Votes</button></div></div>
-      </div>
-    </div>
-  </div>
+<aside id="sidebar" class="sidebar">
+  <a href="#">🏠 Home</a>
+  <a href="#" onclick="openAdmin()">🛠 Admin</a>
+</aside>
 
-  <script src="script.js"></script>
+<main id="feed" class="feed"></main>
+
+<button id="loadMore">Load More</button>
+
+<script src="script.js"></script>
+
 </body>
 </html>
