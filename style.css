@@ -1,0 +1,25 @@
+.filter-btn {
+    transition: all 0.2s ease;
+    font-weight: 600;
+}
+.filter-btn.active-filter {
+    background-color: #2563eb !important;
+    color: white;
+}
+.filter-btn:not(.active-filter):hover {
+    background-color: #4b5563;
+}
+table td, table th {
+    padding: 12px 8px;
+    vertical-align: middle;
+}
+.logo-img {
+    width: 40px;
+    height: 40px;
+    object-fit: cover;
+    border-radius: 8px;
+    background: #1f2937;
+}
+button:active {
+    transform: scale(0.97);
+}
