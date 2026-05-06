@@ -1,253 +1,208 @@
-// Default server list with IP for realtime data
-let servers = [
-    { rank:1, name:"MCPVP", category:"PVP", ip:"mc.hypixel.net", description:"Competitive PvP", logoUrl:"https://i.imgur.com/placeholder.png", version:"1.8-1.20" },
-    { rank:2, name:"Hypixel Network", category:"SKYBLOCK", ip:"mc.hypixel.net", description:"Largest minigames", logoUrl:"", version:"1.8+" },
-    { rank:3, name:"MineMalia", category:"PVP", ip:"minemalia.com", description:"Factions & Skyblock", logoUrl:"", version:"1.19" },
-    { rank:4, name:"VeltPvP", category:"PVP", ip:"veltpvp.com", description:"Practice PvP", logoUrl:"", version:"1.7-1.20" },
-    { rank:5, name:"SaicoPvP", category:"FACTIONS", ip:"saicopvp.com", description:"Epic Factions", logoUrl:"", version:"1.8-1.18" }
-];
-
+// ---------- STORAGE KEYS ----------
+let servers = [];
 let pendingServers = [];
+let userVotes = JSON.parse(localStorage.getItem('bmc_votes')) || {};
 let adminUnlocked = false;
+
+// Load initial data + fallback demo servers
+function loadDemoData() {
+  const saved = localStorage.getItem('bmc_servers');
+  if(saved && JSON.parse(saved).length > 0) {
+    servers = JSON.parse(saved);
+  } else {
+    servers = [
+      { id: Date.now()+1, name:"PixelCraft SMP", ip:"play.pixelcraftbd.net", category:"Survival", description:"Java+Bedrock | Friendly community", logo:"", votes:12, version:"1.20+", players:0, motd:"", ping:"..." },
+      { id: Date.now()+2, name:"NetherZone PvP", ip:"pvp.netherzonebd.com", category:"PvP", description:"Intense KitPvP & Duels", logo:"", votes:8, version:"1.8-1.20", players:0, motd:"", ping:"..." },
+      { id: Date.now()+3, name:"The Knights Of BD", ip:"theknightsofbd.mcsh.io:11772", category:"Factions", description:"Land claiming | Raids", logo:"", votes:5, version:"1.19+", players:0, motd:"", ping:"..." },
+      { id: Date.now()+4, name:"HavenCraft", ip:"mc.havencraft.pro:25666", category:"Survival", description":"SMP | Claims | Quests", logo:"", votes:10, version:"1.20+", players:0, motd:"", ping:"..." },
+      { id: Date.now()+5, name:"FIRESTORM SMP", ip:"play.firestrom.fun:25881", category:"Lifesteal", description:"Lifesteal + PvP", logo:"", votes:3, version:"1.20+", players:0, motd:"", ping:"..." }
+    ];
+    saveServers();
+  }
+  const pendingSaved = localStorage.getItem('bmc_pending');
+  if(pendingSaved) pendingServers = JSON.parse(pendingSaved); else pendingServers = [];
+}
+
+function saveServers() { localStorage.setItem('bmc_servers', JSON.stringify(servers)); updateStatsUI(); }
+function savePending() { localStorage.setItem('bmc_pending', JSON.stringify(pendingServers)); }
+
+// Helper: Update total counters
+function updateStatsUI() {
+  document.getElementById('totalServersCount').innerText = servers.length;
+  const totalVotes = servers.reduce((sum,s)=> sum + (s.votes||0),0);
+  document.getElementById('totalVotesCount').innerText = totalVotes;
+}
+
+// ---------- VOTE LOGIC (Daily cooldown) ----------
+function canVoteToday(serverId) {
+  const last = userVotes[serverId];
+  if(!last) return true;
+  const today = new Date().toDateString();
+  return last !== today;
+}
+function recordVote(serverId) {
+  userVotes[serverId] = new Date().toDateString();
+  localStorage.setItem('bmc_votes', JSON.stringify(userVotes));
+}
+function addVote(serverId) {
+  const idx = servers.findIndex(s => s.id == serverId);
+  if(idx !== -1 && canVoteToday(serverId)) {
+    servers[idx].votes = (servers[idx].votes || 0) + 1;
+    saveServers();
+    recordVote(serverId);
+    renderCurrentView(); // refresh UI
+    return true;
+  }
+  return false;
+}
+
+// ---------- REAL-TIME FETCH (mcsrvstat) ----------
+async function enrichServerStatus(server) {
+  if(!server.ip) return;
+  try {
+    const res = await fetch(`https://api.mcsrvstat.us/2/${server.ip}`);
+    const data = await res.json();
+    if(data.online) {
+      server.players = data.players?.online || 0;
+      let cleanMotd = "";
+      if(data.motd && data.motd.clean) cleanMotd = Array.isArray(data.motd.clean) ? data.motd.clean[0] : data.motd.clean;
+      server.motd = cleanMotd || "Minecraft Server";
+      server.ping = data.ping || "?";
+      server.version = data.version || server.version;
+    } else {
+      server.players = 0; server.motd = "Offline"; server.ping = "-";
+    }
+  } catch(e) { console.warn("status error",e); server.players = 0; server.motd = "Error"; server.ping = "-"; }
+}
+
+// ---------- RENDER HOME (Server Grid) ----------
 let currentCategory = "all";
+let searchQuery = "";
 
-// Load from localStorage
-function loadLocalData() {
-    let saved = localStorage.getItem("mineTiers_servers");
-    if(saved) servers = JSON.parse(saved);
-    let savedPending = localStorage.getItem("mineTiers_pending");
-    if(savedPending) pendingServers = JSON.parse(savedPending);
-    servers.forEach((s,idx)=> s.rank = idx+1);
-    renderTable();
-}
-function saveServers() { localStorage.setItem("mineTiers_servers", JSON.stringify(servers)); }
-function savePending() { localStorage.setItem("mineTiers_pending", JSON.stringify(pendingServers)); }
-
-// Fetch realtime data from mcsrvstat.us
-async function fetchServerStatus(ip) {
-    if(!ip) return null;
-    try {
-        const res = await fetch(`https://api.mcsrvstat.us/2/${ip}`);
-        const data = await res.json();
-        if(data.online) {
-            return {
-                online: true,
-                players: data.players?.online || 0,
-                motd: data.motd?.clean?.[0] || data.motd?.clean || "Minecraft Server",
-                ping: data.ping || 50,
-                version: data.version || "?"
-            };
-        } else {
-            return { online: false, players: 0, motd: "Offline", ping: "-", version: "-" };
-        }
-    } catch(e) {
-        return { online: false, players: 0, motd: "Error", ping: "-", version: "-" };
-    }
-}
-
-async function renderTable() {
-    let filtered = (currentCategory === "all") ? servers : servers.filter(s => s.category === currentCategory);
-    const tbody = document.getElementById("tableBody");
-    if(filtered.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="8" style="text-align:center">No servers in this category</td></tr>`;
-        document.getElementById("globalStats").innerText = `Total: 0 servers | Online: 0 players`;
-        return;
-    }
-    tbody.innerHTML = `<tr><td colspan="8"><div class="stats">Loading realtime data...</div></td></tr>`;
-    let rowsHtml = '';
-    let totalOnline = 0;
-    for(let i=0; i<filtered.length; i++) {
-        const s = filtered[i];
-        const status = await fetchServerStatus(s.ip);
-        if(status && status.online) totalOnline += status.players;
-        const onlineText = status?.online ? `<span style="color:#6fcf97">🟢 ${status.players}</span>` : `<span style="color:#e67e22">🔴 offline</span>`;
-        const motdText = status?.motd ? (status.motd.substring(0,40)) : "No MOTD";
-        const pingText = status?.ping ? `${status.ping}ms` : "-";
-        const versionText = status?.version || s.version || "?";
-        const logo = s.logoUrl ? `<img src="${s.logoUrl}" class="logo-img" onerror="this.src='https://via.placeholder.com/36'">` : `<div class="logo-img" style="background:#2c2f36; display:flex; align-items:center; justify-content:center;">📦</div>`;
-        rowsHtml += `
-            <tr>
-                <td>${s.rank}</td>
-                <td>${logo}</td>
-                <td><strong>${s.name}</strong><br><span style="font-size:0.7rem; color:#aaa;">${s.description||''}</span></td>
-                <td><span class="status-badge">${s.category}</span></td>
-                <td>${motdText}</td>
-                <td>${onlineText}</td>
-                <td class="ping">${pingText}</td>
-                <td>${versionText}</td>
-            </tr>
-        `;
-    }
-    tbody.innerHTML = rowsHtml;
-    document.getElementById("globalStats").innerText = `📊 TOTAL SERVERS: ${filtered.length} | ONLINE PLAYERS: ${totalOnline}`;
-}
-
-function exportJson() {
-    const dataStr = JSON.stringify(servers, null, 2);
-    const blob = new Blob([dataStr], {type:"application/json"});
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = "minecraft_bd_rankings.json";
-    a.click();
-    URL.revokeObjectURL(url);
-}
-
-// Promote modal
-function openPromote() { document.getElementById("promoteModal").style.display = "flex"; }
-function closePromote() { document.getElementById("promoteModal").style.display = "none"; }
-function submitPromote() {
-    const name = document.getElementById("promoName").value.trim();
-    const ip = document.getElementById("promoIp").value.trim();
-    const cat = document.getElementById("promoCat").value;
-    const desc = document.getElementById("promoDesc").value.trim();
-    const logo = document.getElementById("promoLogo").value.trim();
-    if(!name || !ip) { alert("Server name and IP required"); return; }
-    pendingServers.push({ name, ip, category:cat, description:desc, logoUrl:logo });
-    savePending();
-    alert("Promotion request sent! Admin can approve it.");
-    closePromote();
-    if(adminUnlocked) refreshAdminPanel();
-}
-
-// Admin functions
-function unlockAdmin(code) {
-    if(code === "3233") {
-        adminUnlocked = true;
-        localStorage.setItem("admin_unlocked", "true");
-        alert("Admin unlocked! You can now customize UI and manage servers.");
-        refreshAdminPanel();
-        return true;
-    }
-    return false;
-}
-
-function refreshAdminPanel() {
-    if(!adminUnlocked) return;
-    const pendingDiv = document.getElementById("pendingList");
-    if(pendingDiv) {
-        if(pendingServers.length===0) pendingDiv.innerHTML = "No pending requests.";
-        else {
-            let html = "";
-            pendingServers.forEach((p,idx) => {
-                html += `<div style="background:#2c2f36; margin:8px 0; padding:8px;"><b>${p.name}</b> (${p.ip}) [${p.category}]<br>${p.description}<br>
-                <button class="approve-promo" data-idx="${idx}">✅ Approve</button>
-                <button class="reject-promo" data-idx="${idx}">❌ Reject</button></div>`;
-            });
-            pendingDiv.innerHTML = html;
-            document.querySelectorAll(".approve-promo").forEach(btn => {
-                btn.addEventListener("click", (e) => {
-                    let idx = btn.getAttribute("data-idx");
-                    let promo = pendingServers[idx];
-                    let newServer = { rank: servers.length+1, name: promo.name, category: promo.category, ip: promo.ip, description: promo.description, logoUrl: promo.logoUrl, version:"1.8+" };
-                    servers.push(newServer);
-                    servers.forEach((s,ind)=> s.rank = ind+1);
-                    saveServers();
-                    pendingServers.splice(idx,1);
-                    savePending();
-                    refreshAdminPanel();
-                    renderTable();
-                });
-            });
-            document.querySelectorAll(".reject-promo").forEach(btn => {
-                btn.addEventListener("click", (e) => {
-                    let idx = btn.getAttribute("data-idx");
-                    pendingServers.splice(idx,1);
-                    savePending();
-                    refreshAdminPanel();
-                });
-            });
-        }
-    }
-    const editDiv = document.getElementById("serverEditList");
-    if(editDiv) {
-        let editHtml = "";
-        servers.forEach((s,i) => {
-            editHtml += `<div style="border-bottom:1px solid #2c2f36; padding:6px;"><b>${s.name}</b> (${s.ip}) <button class="delServer" data-index="${i}">🗑 Delete</button></div>`;
-        });
-        editHtml += `<button id="addNewServerBtn">➕ Add new server</button>`;
-        editDiv.innerHTML = editHtml;
-        document.querySelectorAll(".delServer").forEach(btn => {
-            btn.addEventListener("click", (e) => {
-                let idx = btn.getAttribute("data-index");
-                servers.splice(idx,1);
-                servers.forEach((s,ind)=> s.rank = ind+1);
-                saveServers();
-                refreshAdminPanel();
-                renderTable();
-            });
-        });
-        const addBtn = document.getElementById("addNewServerBtn");
-        if(addBtn) {
-            addBtn.addEventListener("click", () => {
-                let newName = prompt("Server name");
-                let newIp = prompt("IP address");
-                let newCat = prompt("Category (PVP, SKYBLOCK, etc)", "PVP");
-                if(newName && newIp) {
-                    servers.push({ rank: servers.length+1, name:newName, category:newCat, ip:newIp, description:"", logoUrl:"", version:"1.8+" });
-                    servers.forEach((s,ind)=> s.rank = ind+1);
-                    saveServers();
-                    refreshAdminPanel();
-                    renderTable();
-                }
-            });
-        }
-    }
-}
-
-function applyColor(color) {
-    let style = document.createElement('style');
-    style.textContent = `
-        .tab.active { background: ${color} !important; border-color:${color}; }
-        .menu-btn { color: ${color}; }
-        .mine-header h1 { background: linear-gradient(135deg, ${color}, #ffdd77); -webkit-background-clip: text; background-clip: text; color: transparent; }
+function renderServerGrid() {
+  const grid = document.getElementById('serverGrid');
+  let filtered = [...servers];
+  if(currentCategory !== "all") filtered = filtered.filter(s => s.category === currentCategory);
+  if(searchQuery.trim() !== "") {
+    const q = searchQuery.toLowerCase();
+    filtered = filtered.filter(s => s.name.toLowerCase().includes(q) || s.ip.toLowerCase().includes(q) || (s.category && s.category.toLowerCase().includes(q)));
+  }
+  if(filtered.length === 0) { document.getElementById('noResultsMsg').classList.remove('hidden'); grid.innerHTML = ''; return; }
+  document.getElementById('noResultsMsg').classList.add('hidden');
+  grid.innerHTML = '';
+  filtered.forEach(async (s) => {
+    if(!s.players && s.players !== 0) await enrichServerStatus(s);
+    const canVote = canVoteToday(s.id);
+    const logoHtml = s.logo ? `<img src="${s.logo}" class="w-12 h-12 rounded-xl object-cover bg-gray-800 border border-gray-700" onerror="this.src='https://via.placeholder.com/48?text=MC'">` : `<div class="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-900/40 to-gray-800 flex items-center justify-center text-2xl">🎮</div>`;
+    const card = document.createElement('div');
+    card.className = 'server-card p-4 flex flex-col gap-3';
+    card.innerHTML = `
+      <div class="flex gap-3 items-start"><div>${logoHtml}</div><div class="flex-1"><h3 class="font-bold text-lg flex justify-between"><span>${escapeHtml(s.name)}</span><span class="text-xs bg-gray-800 px-2 py-0.5 rounded-full">${s.category || 'Other'}</span></h3><p class="text-xs text-gray-400 font-mono">${s.ip}</p><p class="text-sm text-gray-300 mt-1 line-clamp-2">${escapeHtml(s.description||'')}</p></div></div>
+      <div class="flex justify-between items-center text-xs"><span class="status-badge"><i class="fas fa-users mr-1"></i> ${s.players ?? '...'} online</span><span class="status-badge"><i class="fas fa-tachometer-alt"></i> ${s.ping || '?'}ms</span><span class="status-badge"><i class="fab fa-java"></i> ${s.version || '1.8+'}</span></div>
+      <div class="flex justify-between items-center"><div><i class="fas fa-heart text-pink-500 mr-1"></i><span class="font-bold">${s.votes || 0}</span> votes</div><button class="vote-btn px-4 py-1.5 rounded-full text-sm font-semibold transition flex items-center gap-1 ${!canVote ? 'opacity-50 cursor-not-allowed' : ''}" data-id="${s.id}" ${!canVote ? 'disabled' : ''}><i class="fas fa-arrow-up"></i> Vote</button></div>
     `;
-    document.head.appendChild(style);
+    grid.appendChild(card);
+  });
+  document.querySelectorAll('.vote-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => { const id = parseInt(btn.getAttribute('data-id')); addVote(id); });
+  });
 }
 
-// Event binding
-document.addEventListener("DOMContentLoaded", () => {
-    loadLocalData();
-    // Category tabs
-    document.querySelectorAll(".tab").forEach(tab => {
-        tab.addEventListener("click", () => {
-            document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
-            tab.classList.add("active");
-            currentCategory = tab.getAttribute("data-cat");
-            renderTable();
-        });
-    });
-    document.getElementById("promoteBtn").onclick = openPromote;
-    document.getElementById("exportJsonBtn").onclick = exportJson;
-    document.getElementById("adminPanelBtn").onclick = () => { document.getElementById("adminModal").style.display = "flex"; };
-    document.getElementById("closePromoModal").onclick = closePromote;
-    document.getElementById("submitPromo").onclick = submitPromote;
-    document.getElementById("closeAdmin").onclick = () => document.getElementById("adminModal").style.display = "none";
-    document.getElementById("verifyAdmin").onclick = () => {
-        let code = document.getElementById("adminCode").value;
-        if(unlockAdmin(code)) {
-            document.getElementById("adminUnlockArea").style.display = "none";
-            document.getElementById("adminFeatures").style.display = "block";
-        } else alert("Wrong code");
-    };
-    document.getElementById("applyColor").onclick = () => {
-        let col = document.getElementById("uiColor").value;
-        applyColor(col);
-        localStorage.setItem("ui_color", col);
-    };
-    document.getElementById("adminUnlockHint").onclick = () => {
-        let code = prompt("Enter admin code (3233):");
-        if(code === "3233") {
-            adminUnlocked = true;
-            localStorage.setItem("admin_unlocked","true");
-            alert("Admin unlocked! Open Admin panel from menu.");
-            refreshAdminPanel();
-        } else alert("Invalid");
-    };
-    if(localStorage.getItem("admin_unlocked") === "true") {
-        adminUnlocked = true;
-        refreshAdminPanel();
-    }
-    let savedColor = localStorage.getItem("ui_color");
-    if(savedColor) applyColor(savedColor);
+function renderLeaderboard() {
+  const sorted = [...servers].sort((a,b)=> (b.votes||0) - (a.votes||0));
+  const container = document.getElementById('leaderboardList');
+  if(!container) return;
+  if(sorted.length === 0) { container.innerHTML = '<div class="text-center text-gray-500 py-6">No servers yet.</div>'; return; }
+  container.innerHTML = sorted.map((s,idx) => `<div class="bg-gray-800/40 rounded-xl p-3 flex justify-between items-center"><div class="flex items-center gap-3"><span class="text-amber-400 font-bold w-6">#${idx+1}</span><div><p class="font-semibold">${escapeHtml(s.name)}</p><p class="text-xs text-gray-400">${s.ip}</p></div></div><div class="flex items-center gap-4"><span><i class="fas fa-heart text-pink-500"></i> ${s.votes||0}</span><span class="text-xs bg-gray-700 px-2 py-1 rounded-full">${s.category}</span></div></div>`).join('');
+}
+
+// ---------- ADMIN LOGIC (hidden code=3233) ----------
+function unlockAdmin(code) {
+  if(code === "3233") {
+    adminUnlocked = true;
+    localStorage.setItem('bmc_admin', 'true');
+    document.body.classList.add('admin-mode');
+    renderPendingList();
+    renderManageServerList();
+    document.getElementById('adminDashboard').classList.remove('hidden');
+    return true;
+  } else { document.getElementById('adminErrorMsg').classList.remove('hidden'); return false; }
+}
+function renderPendingList() {
+  const container = document.getElementById('pendingList');
+  if(!container) return;
+  if(pendingServers.length === 0) { container.innerHTML = '<div class="text-gray-400 italic">✨ No pending submissions.</div>'; return; }
+  container.innerHTML = pendingServers.map((p,idx) => `<div class="border-b border-gray-700 py-3 flex justify-between items-center"><div><p class="font-semibold">${escapeHtml(p.name)}</p><p class="text-xs text-gray-400">${p.ip} | ${p.category}</p><p class="text-xs">${escapeHtml(p.desc||'')}</p></div><div class="flex gap-2"><button class="approve-pending bg-green-800 hover:bg-green-700 text-white text-xs px-3 py-1 rounded" data-idx="${idx}">Approve</button><button class="reject-pending bg-red-800 hover:bg-red-700 text-white text-xs px-3 py-1 rounded" data-idx="${idx}">Reject</button></div></div>`).join('');
+  document.querySelectorAll('.approve-pending').forEach(btn => btn.addEventListener('click', (e) => { let idx = btn.getAttribute('data-idx'); approvePending(idx); }));
+  document.querySelectorAll('.reject-pending').forEach(btn => btn.addEventListener('click', (e) => { let idx = btn.getAttribute('data-idx'); rejectPending(idx); }));
+}
+function approvePending(idx) {
+  const p = pendingServers[idx];
+  const newServer = { id: Date.now(), name: p.name, ip: p.ip, category: p.category, description: p.desc, logo: p.logo || '', votes: 0, version: '1.8+', players:0, motd:'', ping:'...' };
+  servers.push(newServer);
+  saveServers();
+  pendingServers.splice(idx,1);
+  savePending();
+  renderPendingList();
+  renderManageServerList();
+  renderCurrentView();
+}
+function rejectPending(idx) { pendingServers.splice(idx,1); savePending(); renderPendingList(); }
+function renderManageServerList() {
+  const container = document.getElementById('manageServerList');
+  if(!container) return;
+  if(servers.length === 0) { container.innerHTML = '<div class="text-gray-400 italic">No servers available.</div>'; return; }
+  container.innerHTML = servers.map((s,i) => `<div class="flex justify-between items-center border-b border-gray-700 py-2"><div><span class="font-medium">${escapeHtml(s.name)}</span><span class="text-xs text-gray-400 ml-2">${s.ip}</span></div><button class="delete-server bg-red-900/50 hover:bg-red-800 text-red-300 text-xs px-3 py-1 rounded" data-id="${s.id}">Delete</button></div>`).join('');
+  document.querySelectorAll('.delete-server').forEach(btn => btn.addEventListener('click', (e) => { const id = parseInt(btn.getAttribute('data-id')); deleteServerById(id); }));
+}
+function deleteServerById(id) { servers = servers.filter(s => s.id !== id); saveServers(); renderManageServerList(); renderCurrentView(); }
+function resetAllVotes() { if(confirm('⚠️ Reset ALL votes for every server? This cannot be undone.')) { servers.forEach(s => s.votes = 0); saveServers(); renderCurrentView(); renderLeaderboard(); alert('All votes reset.'); } }
+
+// Export JSON
+function exportAllData() { const data = JSON.stringify({ servers, pendingServers }, null, 2); const blob = new Blob([data], {type:'application/json'}); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'bmc_full_backup.json'; a.click(); URL.revokeObjectURL(a.href); }
+
+// Navigation & UI helpers
+function renderCurrentView() {
+  const activeSection = document.querySelector('.nav-link.active')?.getAttribute('data-section') || 'home';
+  if(activeSection === 'home') { document.getElementById('homeSection').classList.remove('hidden'); document.getElementById('leaderboardSection').classList.add('hidden'); document.getElementById('addServerSection').classList.add('hidden'); renderServerGrid(); }
+  else if(activeSection === 'leaderboard') { document.getElementById('homeSection').classList.add('hidden'); document.getElementById('leaderboardSection').classList.remove('hidden'); document.getElementById('addServerSection').classList.add('hidden'); renderLeaderboard(); }
+  else if(activeSection === 'add-server') { document.getElementById('homeSection').classList.add('hidden'); document.getElementById('leaderboardSection').classList.add('hidden'); document.getElementById('addServerSection').classList.remove('hidden'); }
+}
+function escapeHtml(str) { if(!str) return ''; return str.replace(/[&<>]/g, function(m){ if(m === '&') return '&amp;'; if(m === '<') return '&lt;'; if(m === '>') return '&gt;'; return m;}); }
+
+// Event listeners on page load
+document.addEventListener('DOMContentLoaded', () => {
+  loadDemoData();
+  renderCurrentView();
+  updateStatsUI();
+
+  // Search & Filters
+  document.getElementById('searchBtn').onclick = () => { searchQuery = document.getElementById('searchInput').value; renderServerGrid(); };
+  document.getElementById('resetSearchBtn')?.addEventListener('click', () => { searchQuery = ''; document.getElementById('searchInput').value = ''; renderServerGrid(); });
+  document.querySelectorAll('.filter-chip').forEach(btn => { btn.addEventListener('click', () => { document.querySelectorAll('.filter-chip').forEach(b => b.classList.remove('active')); btn.classList.add('active'); currentCategory = btn.getAttribute('data-cat'); renderServerGrid(); }); });
+  
+  // Navigation
+  document.querySelectorAll('.nav-link').forEach(link => { link.addEventListener('click', (e) => { e.preventDefault(); document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active')); link.classList.add('active'); renderCurrentView(); }); });
+  
+  // Submit server
+  document.getElementById('submitServerBtn').onclick = () => {
+    const name = document.getElementById('addName').value.trim(); const ip = document.getElementById('addIp').value.trim(); const category = document.getElementById('addCategory').value; const logo = document.getElementById('addLogo').value.trim(); const desc = document.getElementById('addDesc').value.trim();
+    if(!name || !ip) { alert('Name & IP are required'); return; }
+    pendingServers.push({ name, ip, category, logo, desc, id: Date.now() }); savePending(); alert('Server submitted for admin review!'); document.getElementById('addName').value = ''; document.getElementById('addIp').value = ''; document.getElementById('addLogo').value = ''; document.getElementById('addDesc').value = '';
+  };
+  
+  // Admin UI
+  document.getElementById('adminHeaderBtn').onclick = () => { document.getElementById('adminModal').classList.remove('hidden'); };
+  document.getElementById('closeAdminModal').onclick = () => { document.getElementById('adminModal').classList.add('hidden'); document.getElementById('adminErrorMsg').classList.add('hidden'); };
+  document.getElementById('unlockAdminBtn').onclick = () => { const code = document.getElementById('adminCodeInput').value; if(unlockAdmin(code)) { document.getElementById('adminModal').classList.add('hidden'); document.getElementById('adminDashboard').classList.remove('hidden'); } };
+  document.getElementById('closeDashboardBtn').onclick = () => { document.getElementById('adminDashboard').classList.add('hidden'); };
+  document.getElementById('exportDataBtn').onclick = () => exportAllData();
+  document.getElementById('applyThemeBtn').onclick = () => { const color = document.getElementById('themeColorPicker').value; document.documentElement.style.setProperty('--color-primary', color); localStorage.setItem('bmc_primary', color); };
+  document.getElementById('resetVotesBtn')?.addEventListener('click', () => resetAllVotes());
+  document.getElementById('clearLeaderboardBtn')?.addEventListener('click', () => resetAllVotes());
+  if(localStorage.getItem('bmc_admin') === 'true') { adminUnlocked = true; document.body.classList.add('admin-mode'); }
+  const savedColor = localStorage.getItem('bmc_primary'); if(savedColor) document.documentElement.style.setProperty('--color-primary', savedColor);
+  
+  // Refresh realtime data every 35 seconds
+  setInterval(() => { if(document.querySelector('.nav-link.active')?.getAttribute('data-section') === 'home') renderServerGrid(); }, 35000);
 });
