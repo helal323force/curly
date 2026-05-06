@@ -1,98 +1,48 @@
-/* Custom Styles for BMC - Modern Minecraft Server List */
 body {
-  background: radial-gradient(circle at 10% 20%, rgba(17, 24, 39, 1) 0%, #030712 100%);
-  font-family: 'Inter', sans-serif;
+  background: #0f0f0f;
+  color: white;
+  font-family: sans-serif;
 }
 
-/* Custom Scrollbar */
-::-webkit-scrollbar { width: 6px; }
-::-webkit-scrollbar-track { background: #1f2937; border-radius: 10px; }
-::-webkit-scrollbar-thumb { background: #f59e0b; border-radius: 10px; }
-
-/* Nav Links */
-.nav-link {
-  transition: all 0.2s ease;
-  padding: 6px 12px;
-  border-radius: 999px;
-}
-.nav-link.active {
-  background: rgba(245, 158, 11, 0.15);
-  color: #fbbf24;
-  font-weight: 600;
-}
-.nav-link:not(.active):hover {
-  background: rgba(55, 65, 81, 0.5);
-  color: #fcd34d;
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px;
+  background: #1a1a1a;
 }
 
-/* Filter Chips */
-.filter-chip {
-  background: #1f2937;
-  padding: 6px 18px;
-  border-radius: 40px;
-  font-size: 0.85rem;
-  font-weight: 500;
-  transition: all 0.2s;
-  border: 1px solid #374151;
-  cursor: pointer;
-}
-.filter-chip.active, .filter-chip:hover {
-  background: #f59e0b;
-  color: #030712;
-  border-color: #f59e0b;
-  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+.logo-box {
+  display: flex;
+  gap: 10px;
 }
 
-/* Server Cards */
-.server-card {
-  background: linear-gradient(145deg, #111827, #0f172a);
-  border-radius: 1.25rem;
-  border: 1px solid #2d3748;
-  transition: transform 0.25s ease, box-shadow 0.3s ease;
-  backdrop-filter: blur(2px);
-}
-.server-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 20px 30px -12px rgba(0,0,0,0.6);
-  border-color: #f59e0b60;
-}
-.vote-btn {
-  background: rgba(245, 158, 11, 0.1);
-  border: 1px solid #f59e0b40;
-  transition: all 0.15s;
-}
-.vote-btn:hover:not(:disabled) {
-  background: #f59e0b;
-  color: #030712;
-  box-shadow: 0 2px 10px #f59e0b60;
-}
-.vote-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
+.logo {
+  width: 40px;
 }
 
-/* Badge styles for version/players */
-.status-badge {
-  background: #1e293b;
-  border-radius: 40px;
-  padding: 0.2rem 0.6rem;
-  font-size: 0.7rem;
-  font-weight: 500;
+.sidebar {
+  position: fixed;
+  left: -200px;
+  background: #222;
+  height: 100%;
+  width: 200px;
+  transition: 0.3s;
 }
 
-/* Animations */
-@keyframes fadeInUp {
-  from { opacity: 0; transform: translateY(15px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-.server-card {
-  animation: fadeInUp 0.4s cubic-bezier(0.2, 0.9, 0.4, 1.1) forwards;
+.sidebar.show {
+  left: 0;
 }
 
-/* Admin only button */
-.admin-only {
-  display: none;
+.card {
+  background: #1a1a1a;
+  margin: 10px;
+  border-radius: 10px;
 }
-.admin-mode .admin-only {
-  display: inline-flex;
+
+.card img {
+  width: 100%;
+}
+
+.rank {
+  color: gold;
 }
