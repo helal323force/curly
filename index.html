@@ -3,57 +3,95 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Minecraft BD Server Rankings</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>MineTiers - Minecraft BD Server Rankings</title>
     <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
-<body class="bg-gray-900 text-white">
-    <div class="container mx-auto px-4 py-6 max-w-6xl">
-        <div class="text-center mb-8">
-            <h1 class="text-4xl font-extrabold text-yellow-400">⛏️ Minecraft BD Server Rankings</h1>
-            <p class="text-gray-400 mt-2">Real player experience • Independent rankings</p>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="mine-header">
+            <h1>⚔ MINE TIERS ⚔</h1>
+            <p>MINECRAFT SERVER TIER LIST • INDEPENDENT & UNBIASED RANKINGS</p>
         </div>
 
-        <!-- Filter Buttons -->
-        <div class="flex flex-wrap justify-center gap-2 mb-8">
-            <button class="filter-btn active-filter bg-blue-600 px-5 py-2 rounded-full" data-cat="all">All</button>
-            <button class="filter-btn bg-gray-800 px-5 py-2 rounded-full" data-cat="PVP">PVP</button>
-            <button class="filter-btn bg-gray-800 px-5 py-2 rounded-full" data-cat="LIFESTEAL">Lifesteal</button>
-            <button class="filter-btn bg-gray-800 px-5 py-2 rounded-full" data-cat="HEADSTEAL">Headsteal</button>
-            <button class="filter-btn bg-gray-800 px-5 py-2 rounded-full" data-cat="PEACEFUL">Peaceful</button>
-            <button class="filter-btn bg-gray-800 px-5 py-2 rounded-full" data-cat="BEDWAR">Bedwar</button>
-            <button class="filter-btn bg-gray-800 px-5 py-2 rounded-full" data-cat="FACTIONS">Factions</button>
-            <button class="filter-btn bg-gray-800 px-5 py-2 rounded-full" data-cat="SKYBLOCK">Skyblock</button>
+        <!-- Menu Bar -->
+        <div class="menu-bar">
+            <button class="menu-btn" id="promoteBtn">📢 PROMOTE YOUR SERVER</button>
+            <button class="menu-btn" id="adminPanelBtn">🔐 ADMIN (3233)</button>
+            <button class="menu-btn" id="exportJsonBtn">💾 EXPORT JSON</button>
         </div>
 
-        <!-- Stats & Export -->
-        <div class="flex justify-between items-center mb-4 flex-wrap gap-3">
-            <div class="text-sm bg-gray-800 px-4 py-2 rounded-lg">📊 <span id="stats">Loading...</span></div>
-            <button id="exportBtn" class="bg-green-700 hover:bg-green-600 px-4 py-2 rounded-lg flex gap-2"><i class="fas fa-download"></i> Export JSON</button>
+        <!-- Category Tabs -->
+        <div class="category-tabs" id="categoryTabs">
+            <span class="tab active" data-cat="all">OVERALL</span>
+            <span class="tab" data-cat="PVP">PVP</span>
+            <span class="tab" data-cat="SKYBLOCK">SKYBLOCK</span>
+            <span class="tab" data-cat="LIFESTEAL">LIFESTEAL</span>
+            <span class="tab" data-cat="FACTIONS">FACTIONS</span>
+            <span class="tab" data-cat="BEDWAR">BEDWAR</span>
+            <span class="tab" data-cat="PEACEFUL">PEACEFUL</span>
         </div>
 
-        <!-- Table -->
-        <div class="overflow-x-auto bg-gray-800 rounded-xl shadow-lg">
-            <table class="min-w-full text-sm md:text-base">
-                <thead class="bg-gray-900 border-b border-gray-700">
-                    <tr>
-                        <th class="py-3 px-3">Rank</th>
-                        <th class="py-3 px-3">Logo</th>
-                        <th class="py-3 px-3">Server Name</th>
-                        <th class="py-3 px-3">Category</th>
-                        <th class="py-3 px-3">Players</th>
-                        <th class="py-3 px-3">Description</th>
-                        <th class="py-3 px-3">Change Logo</th>
-                    </tr>
-                </thead>
-                <tbody id="server-table"></tbody>
-            </table>
+        <!-- Stats -->
+        <div class="flex-between">
+            <div class="stats" id="globalStats">Loading stats...</div>
         </div>
-        <footer class="text-center text-gray-500 text-sm mt-8 border-t border-gray-800 pt-6">
-            © 2025 Minecraft BD Rankings | Click "Change Logo" to update via Imgur/Catbox link. Use Export JSON to save & upload to GitHub.
+
+        <!-- Server Table -->
+        <table class="server-table" id="serverTable">
+            <thead>
+                <tr><th>RANK</th><th>LOGO</th><th>SERVER NAME</th><th>CATEGORY</th><th>MOTD / STATUS</th><th>PLAYERS ONLINE</th><th>PING</th><th>VERSION</th></tr>
+            </thead>
+            <tbody id="tableBody">
+                <tr><td colspan="8" style="text-align:center">Loading servers...</td></tr>
+            </tbody>
+        </table>
+
+        <footer>
+            <span id="adminUnlockHint" class="admin-click">🔑 Admin Panel (click to unlock)</span> • © 2025 MineTiers BD • Real-time data from mcsrvstat.us
         </footer>
     </div>
+
+    <!-- Promote Modal -->
+    <div id="promoteModal" class="modal">
+        <div class="modal-content">
+            <h3>📢 Promote Your Server</h3>
+            <input type="text" id="promoName" placeholder="Server Name">
+            <input type="text" id="promoIp" placeholder="IP Address (e.g., play.example.com)">
+            <select id="promoCat">
+                <option value="PVP">PVP</option><option value="SKYBLOCK">SKYBLOCK</option>
+                <option value="LIFESTEAL">LIFESTEAL</option><option value="FACTIONS">FACTIONS</option>
+                <option value="BEDWAR">BEDWAR</option><option value="PEACEFUL">PEACEFUL</option>
+            </select>
+            <textarea id="promoDesc" placeholder="Short description" rows="2"></textarea>
+            <input type="text" id="promoLogo" placeholder="Logo URL (optional)">
+            <button id="submitPromo">Submit for Review</button>
+            <button id="closePromoModal" style="background:#2c2f36;">Cancel</button>
+        </div>
+    </div>
+
+    <!-- Admin Modal -->
+    <div id="adminModal" class="modal">
+        <div class="modal-content" style="max-width: 700px;">
+            <h3>🔧 ADMIN CONTROL PANEL</h3>
+            <div id="adminUnlockArea">
+                <p>Enter unlock code: <input type="password" id="adminCode" placeholder="3233"><button id="verifyAdmin">Unlock</button></p>
+            </div>
+            <div id="adminFeatures" style="display:none;">
+                <h4>⚙️ Customize UI</h4>
+                <label>Primary color: <input type="color" id="uiColor" value="#ffb347"></label>
+                <button id="applyColor">Apply</button>
+                <hr>
+                <h4>📝 Pending Promotions</h4>
+                <div id="pendingList">No pending requests</div>
+                <hr>
+                <h4>➕ Add / Edit Servers</h4>
+                <div id="serverEditList"></div>
+                <button id="closeAdmin">Close</button>
+            </div>
+        </div>
+    </div>
+
     <script src="script.js"></script>
 </body>
 </html>
