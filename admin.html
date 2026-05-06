@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Admin Panel</title>
+</head>
+<body>
+
+<h2>Admin Panel 🔐</h2>
+
+<form id="form">
+  <input placeholder="Title" id="title"><br>
+  <input placeholder="IP" id="ip"><br>
+  <input placeholder="Image URL" id="img"><br>
+  <input placeholder="Description" id="desc"><br>
+  <button>Add Server</button>
+</form>
+
+<p>⚠️ Note: GitHub static site এ data save হবে না</p>
+
+<script>
+document.getElementById("form").onsubmit = (e)=>{
+  e.preventDefault();
+  alert("Demo only 😄 GitHub save support নাই");
+}
+</script>
+
+</body>
+</html>
