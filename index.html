@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minecraft BD Server Rankings</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body class="bg-gray-900 text-white">
+    <div class="container mx-auto px-4 py-6 max-w-6xl">
+        <div class="text-center mb-8">
+            <h1 class="text-4xl font-extrabold text-yellow-400">⛏️ Minecraft BD Server Rankings</h1>
+            <p class="text-gray-400 mt-2">Real player experience • Independent rankings</p>
+        </div>
+
+        <!-- Filter Buttons -->
+        <div class="flex flex-wrap justify-center gap-2 mb-8">
+            <button class="filter-btn active-filter bg-blue-600 px-5 py-2 rounded-full" data-cat="all">All</button>
+            <button class="filter-btn bg-gray-800 px-5 py-2 rounded-full" data-cat="PVP">PVP</button>
+            <button class="filter-btn bg-gray-800 px-5 py-2 rounded-full" data-cat="LIFESTEAL">Lifesteal</button>
+            <button class="filter-btn bg-gray-800 px-5 py-2 rounded-full" data-cat="HEADSTEAL">Headsteal</button>
+            <button class="filter-btn bg-gray-800 px-5 py-2 rounded-full" data-cat="PEACEFUL">Peaceful</button>
+            <button class="filter-btn bg-gray-800 px-5 py-2 rounded-full" data-cat="BEDWAR">Bedwar</button>
+            <button class="filter-btn bg-gray-800 px-5 py-2 rounded-full" data-cat="FACTIONS">Factions</button>
+            <button class="filter-btn bg-gray-800 px-5 py-2 rounded-full" data-cat="SKYBLOCK">Skyblock</button>
+        </div>
+
+        <!-- Stats & Export -->
+        <div class="flex justify-between items-center mb-4 flex-wrap gap-3">
+            <div class="text-sm bg-gray-800 px-4 py-2 rounded-lg">📊 <span id="stats">Loading...</span></div>
+            <button id="exportBtn" class="bg-green-700 hover:bg-green-600 px-4 py-2 rounded-lg flex gap-2"><i class="fas fa-download"></i> Export JSON</button>
+        </div>
+
+        <!-- Table -->
+        <div class="overflow-x-auto bg-gray-800 rounded-xl shadow-lg">
+            <table class="min-w-full text-sm md:text-base">
+                <thead class="bg-gray-900 border-b border-gray-700">
+                    <tr>
+                        <th class="py-3 px-3">Rank</th>
+                        <th class="py-3 px-3">Logo</th>
+                        <th class="py-3 px-3">Server Name</th>
+                        <th class="py-3 px-3">Category</th>
+                        <th class="py-3 px-3">Players</th>
+                        <th class="py-3 px-3">Description</th>
+                        <th class="py-3 px-3">Change Logo</th>
+                    </tr>
+                </thead>
+                <tbody id="server-table"></tbody>
+            </table>
+        </div>
+        <footer class="text-center text-gray-500 text-sm mt-8 border-t border-gray-800 pt-6">
+            © 2025 Minecraft BD Rankings | Click "Change Logo" to update via Imgur/Catbox link. Use Export JSON to save & upload to GitHub.
+        </footer>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
